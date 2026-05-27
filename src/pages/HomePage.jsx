@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import api from "../api/axios";
 import {
   BookOpen, Brain,
   CheckCircle2, ArrowRight, Star, Quote,
@@ -12,6 +13,64 @@ const fontStyle = { fontFamily: "'Inter', sans-serif" };
 
 function isLoggedIn() {
   return !!localStorage.getItem("token");
+}
+
+function NavDropdown({ label }) {
+  const [open, setOpen] = useState(false);
+  const [levels, setLevels] = useState([]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    api.get("/levels").then(res => setLevels(res.data));
+  }, []);
+
+  function handleLevelClick(levelId) {
+    const typeMap = { "Reading": 1, "Grammar": 2, "Vocabulary": 3 };
+    navigate(`/exercises?typeId=${typeMap[label]}&levelId=${levelId}`);
+  }
+
+  return (
+    <div style={{ position: "relative" }} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <span style={{ cursor: "pointer", color: "rgba(255,255,255,0.85)", fontWeight: 600, fontSize: "1rem", ...fontStyle }}>
+        {label} <span style={{ fontSize: "0.6rem", opacity: 0.7 }}>▼</span>
+      </span>
+
+      {open && levels.length > 0 && (
+        <div style={{
+          position: "absolute", top: "100%", left: "50%",
+          transform: "translateX(-50%)", background: "#fff",
+          borderRadius: "0.75rem", boxShadow: "0 8px 30px rgba(0,0,0,0.15)",
+          padding: "0.4rem", minWidth: "210px", zIndex: 100,
+        }}>
+          {levels.map((level) => (
+            <button
+              key={level.id}
+              onClick={() => handleLevelClick(level.id)}
+              style={{
+                display: "flex", alignItems: "center", gap: "0.75rem",
+                padding: "0.6rem 1rem", borderRadius: "0.5rem",
+                color: "#374151", background: "none", border: "none",
+                cursor: "pointer", fontSize: "0.9rem", fontWeight: 500,
+                width: "100%", textAlign: "left", ...fontStyle,
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = "#f3f4f6"}
+              onMouseLeave={e => e.currentTarget.style.background = "none"}
+            >
+              <span style={{
+                width: "2.2rem", height: "2.2rem", borderRadius: "50%",
+                border: "2px solid #22c55e", display: "flex",
+                alignItems: "center", justifyContent: "center",
+                fontSize: "0.65rem", fontWeight: 700, color: "#22c55e", flexShrink: 0,
+              }}>
+                {level.cefrCode}
+              </span>
+              {level.name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function HomePage() {
@@ -57,11 +116,10 @@ function Hero() {
         </Link>
 
         <div className="hidden sm:flex items-center gap-16" style={{ fontSize: "1rem", fontWeight: 600, color: "rgba(255,255,255,0.85)", ...fontStyle }}>
-          <a href="#reading" style={{ color: "inherit", textDecoration: "none" }}>Reading</a>
-          <a href="#grammar" style={{ color: "inherit", textDecoration: "none" }}>Grammar</a>
-          <a href="#vocabulary" style={{ color: "inherit", textDecoration: "none" }}>Vocabulary</a>
+          <NavDropdown label="Reading" />
+          <NavDropdown label="Grammar" />
+          <NavDropdown label="Vocabulary" />
         </div>
-
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
           {isLoggedIn() ? (
             <Link to="/profile" style={{
